@@ -1,0 +1,15 @@
+{
+  "name": "がくりょく しんだん",
+  "short_name": "しんだん",
+  "description": "小学4年生の算数・社会の単元別かんい判定テスト。苦手単元をマップ化する。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f7fb",
+  "theme_color": "#1a4d80",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

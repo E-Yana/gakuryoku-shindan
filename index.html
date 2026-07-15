@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>がくりょくしんだん</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#1a4d80" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="がくりょくしんだん" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ ホーム画面 ============ -->
+  <section id="screen-home" class="screen">
+    <header class="app-header">
+      <h1>がくりょく しんだん</h1>
+      <p class="muted small">算数・社会の 単元べつ かんいテスト</p>
+    </header>
+
+    <div class="panel">
+      <h2>🔢 算数</h2>
+      <div id="home-history-sansu"></div>
+      <button id="btn-start-sansu" class="big-btn primary">▶ 算数をはじめる</button>
+    </div>
+
+    <div class="panel">
+      <h2>🗾 社会</h2>
+      <div id="home-history-shakai"></div>
+      <button id="btn-start-shakai" class="big-btn">▶ 社会をはじめる</button>
+    </div>
+
+    <p class="muted small note">※ これは「クイズ」だよ。わからなくても だいじょうぶ、今の力を知るためのものだよ。</p>
+  </section>
+
+  <!-- ============ クイズ画面 ============ -->
+  <section id="screen-quiz" class="screen hidden">
+    <div class="quiz-top">
+      <button id="btn-quiz-quit" class="text-btn small">やめる</button>
+      <div class="quiz-top-right">
+        <span id="quiz-subject-label" class="subject-badge"></span>
+        <div id="quiz-progress" class="progress-badge">1 / 10</div>
+      </div>
+    </div>
+
+    <div class="question-area">
+      <p id="quiz-unit-label" class="unit-cue"></p>
+      <p id="quiz-question" class="prompt"></p>
+    </div>
+
+    <div id="quiz-choices" class="vocab-choices"></div>
+
+    <div id="quiz-feedback" class="reveal hidden">
+      <p id="quiz-feedback-msg" class="self-check-label"></p>
+      <p id="quiz-explanation" class="muted small"></p>
+      <button id="btn-quiz-next" class="big-btn primary">つぎへ</button>
+    </div>
+  </section>
+
+  <!-- ============ 結果画面 ============ -->
+  <section id="screen-result" class="screen hidden">
+    <header class="app-header">
+      <h1>おつかれさま！</h1>
+      <p id="result-subject-label" class="muted"></p>
+    </header>
+    <div class="result-score-box">
+      <div id="result-score" class="result-score">0 / 0</div>
+      <p id="result-msg" class="result-msg"></p>
+    </div>
+
+    <div class="panel">
+      <h2>単元別 苦手マップ</h2>
+      <div id="result-unit-map"></div>
+    </div>
+
+    <div class="panel" id="result-compare-panel">
+      <div id="result-compare"></div>
+    </div>
+
+    <button id="btn-result-home" class="big-btn primary">ホームへ もどる</button>
+  </section>
+
+</div>
+
+<script src="sansu_data.js"></script>
+<script src="shakai_data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

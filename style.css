@@ -1,0 +1,204 @@
+/* ============================================================
+   がくりょくしんだん スタイル（子ども向け・タブレット最適化）
+   kanji_drill/style.css をベースに流用
+   ============================================================ */
+:root {
+  --main: #1a4d80;
+  --main-light: #e8eef6;
+  --ok: #2e8b57;
+  --ng: #c0392b;
+  --bg: #f4f7fb;
+  --card: #ffffff;
+  --text: #213040;
+  --muted: #7a8694;
+  --radius: 18px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN", "Hiragino Kaku Gothic ProN", sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+#app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: env(safe-area-inset-top) 18px calc(env(safe-area-inset-bottom) + 24px);
+  min-height: 100vh;
+}
+
+.hidden { display: none !important; }
+
+/* --- ヘッダー --- */
+.app-header { text-align: center; padding: 18px 0 6px; }
+.app-header h1 {
+  font-size: 26px;
+  color: var(--main);
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+/* --- パネル --- */
+.panel {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: 0 2px 8px rgba(26, 77, 128, 0.06);
+}
+.panel h2 {
+  font-size: 18px;
+  color: var(--main);
+  margin: 0 0 10px;
+  border-bottom: 3px solid var(--main-light);
+  padding-bottom: 6px;
+}
+
+.note { text-align: center; margin-top: 10px; }
+
+/* --- ボタン --- */
+.big-btn {
+  display: block;
+  width: 100%;
+  padding: 18px;
+  font-size: 20px;
+  font-weight: 800;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--main-light);
+  color: var(--main);
+  cursor: pointer;
+  margin: 10px 0;
+  transition: transform 0.05s ease, filter 0.1s ease;
+}
+.big-btn.primary { background: var(--main); color: #fff; box-shadow: 0 4px 0 #123a61; }
+.big-btn:active { transform: translateY(2px); }
+.big-btn:disabled { opacity: 0.5; box-shadow: none; cursor: default; }
+
+.text-btn {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--main);
+  font-size: 16px;
+  padding: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.text-btn.small { width: auto; font-size: 14px; padding: 6px; text-decoration: none; color: var(--muted); }
+
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+/* ============ クイズ画面 ============ */
+.quiz-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+.quiz-top-right { display: flex; align-items: center; gap: 8px; }
+.subject-badge {
+  background: var(--main-light);
+  color: var(--main);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.progress-badge {
+  background: var(--main);
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.question-area {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 22px 18px;
+  text-align: center;
+  margin: 10px 0;
+  box-shadow: 0 2px 8px rgba(26, 77, 128, 0.06);
+}
+.unit-cue {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+.prompt {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.7;
+  margin: 6px 0;
+}
+
+.reveal { margin-top: 10px; }
+.self-check-label { text-align: center; color: var(--muted); margin: 12px 0 8px; font-weight: 700; }
+
+/* ============ 3択ボタン（クイズ共通） ============ */
+.vocab-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 14px 0;
+}
+.choice-btn {
+  padding: 18px 14px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+  border: 2px solid var(--main-light);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(26, 77, 128, 0.06);
+}
+.choice-btn:active { transform: translateY(2px); }
+.choice-btn.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+.choice-btn.ng { background: var(--ng); border-color: var(--ng); color: #fff; }
+.choice-btn:disabled { cursor: default; }
+.choice-btn:disabled:not(.ok):not(.ng) { opacity: 0.5; }
+
+/* ============ 結果画面 ============ */
+.result-score-box { text-align: center; margin: 20px 0; }
+.result-score { font-size: 56px; font-weight: 800; color: var(--main); }
+.result-msg { font-size: 20px; font-weight: 700; margin: 8px 0; }
+
+.priority-note {
+  background: #fff0ee;
+  border: 2px solid var(--ng);
+  border-radius: var(--radius);
+  padding: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.priority-note.ok-note { background: #eefaf1; border-color: var(--ok); }
+
+.unit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.unit-table th, .unit-table td {
+  padding: 8px 6px;
+  text-align: left;
+  border-bottom: 1px dashed #e3e8ef;
+}
+.unit-table th { color: var(--muted); font-size: 13px; }
+.unit-table tr.weak-row td:first-child { color: var(--ng); font-weight: 800; }
+
+@media (max-width: 380px) {
+  .prompt { font-size: 20px; }
+}
