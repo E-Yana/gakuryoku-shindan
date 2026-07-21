@@ -29,12 +29,16 @@ function todayStr() {
 let store = loadStore();
 
 function loadStore() {
-  const init = { history: { sansu: [], shakai: [] } };
+  // learned: 教科ごとの「ならった単元」リスト（未設定なら全単元を対象とする）
+  const init = { history: { sansu: [], shakai: [] }, learned: {} };
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return init;
     const parsed = JSON.parse(raw);
-    return { history: Object.assign(init.history, parsed.history || {}) };
+    return {
+      history: Object.assign(init.history, parsed.history || {}),
+      learned: Object.assign(init.learned, parsed.learned || {}),
+    };
   } catch (e) {
     console.warn("ストア読込に失敗。初期化します", e);
     return init;
@@ -76,7 +80,7 @@ function escapeHtml(s) {
 // ============================================================
 // 画面制御
 // ============================================================
-const screens = ["home", "quiz", "result"];
+const screens = ["home", "scope", "quiz", "result", "history"];
 function showScreen(name) {
   screens.forEach((s) => {
     const el = document.getElementById("screen-" + s);
@@ -106,17 +110,86 @@ function renderHistorySummary(subject, elId) {
     `<p class="small">受験回数: ${list.length}回／直近: ${escapeHtml(last.date)}（${last.correct}/${last.total}）</p>`;
 }
 
-// --- クイズ画面 ----------------------------------------------
-let quizState = null; // { subject, ids, index, results:{}, choiceOrder:{} }
+// --- 範囲えらび画面（未習単元を出題から外す） --------------------
+// 未習の単元を出題すると必ず正答率0%になり「最優先で対策すべき単元」を
+// 乗っ取ってしまうため、受験前に習った範囲だけを選ばせる
+let scopeSubject = null;
 
-function startQuiz(subject) {
-  const bank = bankFor(subject);
+/** 問題バンクに登場する単元名を出現順で返す */
+function unitsOf(subject) {
+  const seen = [];
+  bankFor(subject).forEach((p) => {
+    if (!seen.includes(p.unit)) seen.push(p.unit);
+  });
+  return seen;
+}
+
+/** 保存済みの「ならった単元」。未設定・不整合なら全単元にフォールバック */
+function learnedUnits(subject) {
+  const all = unitsOf(subject);
+  const saved = store.learned[subject];
+  if (!Array.isArray(saved)) return all;
+  const valid = saved.filter((u) => all.includes(u)); // 問題追加/改名で消えた単元を除去
+  return valid.length > 0 ? valid : all;
+}
+
+function openScope(subject) {
+  scopeSubject = subject;
+  document.getElementById("scope-subject-label").textContent = SUBJECTS[subject].label;
+
+  const selected = learnedUnits(subject);
+  const box = document.getElementById("scope-list");
+  box.innerHTML = "";
+  unitsOf(subject).forEach((unit) => {
+    const label = document.createElement("label");
+    label.className = "scope-item";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = unit;
+    cb.checked = selected.includes(unit);
+    const span = document.createElement("span");
+    span.textContent = unit;
+    label.appendChild(cb);
+    label.appendChild(span);
+    box.appendChild(label);
+  });
+  showScreen("scope");
+}
+
+function selectedScopeUnits() {
+  return Array.from(document.querySelectorAll("#scope-list input[type=checkbox]"))
+    .filter((el) => el.checked)
+    .map((el) => el.value);
+}
+
+function toggleAllScope(on) {
+  document.querySelectorAll("#scope-list input[type=checkbox]").forEach((el) => {
+    el.checked = on;
+  });
+}
+
+function startFromScope() {
+  const units = selectedScopeUnits();
+  if (units.length === 0) {
+    alert("すくなくとも 1つは えらんでね。");
+    return;
+  }
+  store.learned[scopeSubject] = units; // 次回以降の初期値として記憶
+  saveStore();
+  startQuiz(scopeSubject, units);
+}
+
+// --- クイズ画面 ----------------------------------------------
+let quizState = null; // { subject, ids, index, results:{}, units:[] }
+
+function startQuiz(subject, units) {
+  const bank = bankFor(subject).filter((p) => units.includes(p.unit));
   if (bank.length === 0) {
     alert("問題データが読み込まれていません。");
     return;
   }
   const ids = shuffleArray(bank.map((p) => p.id));
-  quizState = { subject, ids, index: 0, results: {} };
+  quizState = { subject, ids, index: 0, results: {}, units };
   showQuestion();
 }
 
@@ -181,6 +254,8 @@ function quitQuiz() {
 }
 
 // --- 結果画面（苦手マップ） ------------------------------------
+let currentResultView = null; // { subject, record } 結果画面が今表示している記録
+
 function finishQuiz() {
   const { subject, results } = quizState;
   const ids = Object.keys(results);
@@ -197,14 +272,23 @@ function finishQuiz() {
   });
 
   // 履歴に保存（受験日つき）
-  const record = { date: todayStr(), correct: okCount, total, byUnit };
-  store.history[subject].push(record);
+  const record = { date: todayStr(), correct: okCount, total, byUnit, units: quizState.units };
+  const list = store.history[subject];
+  const prev = list.length > 0 ? list[list.length - 1] : null; // 保存前の最終回＝前回
+  list.push(record);
   saveStore();
 
-  renderResult(subject, record);
+  renderResult(subject, record, prev);
 }
 
-function renderResult(subject, record) {
+/**
+ * 結果画面を描画する。受験直後だけでなく履歴からの再表示にも使う。
+ * @param {string} subject 教科キー
+ * @param {object} record 表示する受験記録
+ * @param {object|null} prevRecord 比較対象（1つ前の回）。無ければ比較表を出さない
+ */
+function renderResult(subject, record, prevRecord) {
+  currentResultView = { subject, record }; // コピー機能が参照する
   document.getElementById("result-subject-label").textContent = SUBJECTS[subject].label;
   document.getElementById("result-score").textContent = `${record.correct} / ${record.total}`;
 
@@ -214,6 +298,15 @@ function renderResult(subject, record) {
   else if (ratio >= 0.7) msg = "いいちょうし！この調子！👍";
   else msg = "だいじょうぶ、これから得意にしていこう！";
   document.getElementById("result-msg").textContent = msg;
+
+  // 出題範囲（未習単元を外している場合に「全単元ではない」ことを明示する）
+  const scopeNote = document.getElementById("result-scope-note");
+  const allUnits = unitsOf(subject);
+  const askedUnits = record.units || Object.keys(record.byUnit);
+  scopeNote.textContent =
+    askedUnits.length < allUnits.length
+      ? `出題範囲: ${askedUnits.length}/${allUnits.length}単元（ならった範囲のみ）`
+      : `出題範囲: 全${allUnits.length}単元`;
 
   // 単元別の正答率（低い順＝苦手順）に並べる
   const units = Object.entries(record.byUnit)
@@ -244,21 +337,24 @@ function renderResult(subject, record) {
   }
 
   // 前回との比較（before/after）
-  renderComparison(subject);
+  renderComparison(prevRecord, record);
+
+  // コピー用UIは表示のたびに初期状態へ戻す
+  document.getElementById("copy-status").classList.add("hidden");
+  const fallback = document.getElementById("copy-fallback");
+  fallback.classList.add("hidden");
+  fallback.value = "";
 
   showScreen("result");
 }
 
-/** 同じ教科の過去2回分を比較表示（Week0 vs Week6 の before/after 用） */
-function renderComparison(subject) {
+/** 2回分を並べて比較表示（Week0 vs Week6 の before/after 用） */
+function renderComparison(prev, curr) {
   const box = document.getElementById("result-compare");
-  const list = store.history[subject] || [];
-  if (list.length < 2) {
+  if (!prev || !curr) {
     box.innerHTML = "";
     return;
   }
-  const prev = list[list.length - 2];
-  const curr = list[list.length - 1];
   const units = new Set([...Object.keys(prev.byUnit), ...Object.keys(curr.byUnit)]);
   const rows = Array.from(units).map((unit) => {
     const p = prev.byUnit[unit];
@@ -283,15 +379,199 @@ function renderComparison(subject) {
     "</tbody></table>";
 }
 
+// --- 履歴画面（過去の結果を再表示） ----------------------------
+/** 全教科の受験記録を新しい順に並べ、選ぶと結果画面を再描画する */
+function renderHistory() {
+  const box = document.getElementById("history-list");
+  // {subject, record, index} へ平坦化し、日付の新しい順に並べる
+  const entries = [];
+  Object.keys(SUBJECTS).forEach((subject) => {
+    (store.history[subject] || []).forEach((record, index) => {
+      entries.push({ subject, record, index });
+    });
+  });
+  entries.sort((a, b) => (a.record.date < b.record.date ? 1 : a.record.date > b.record.date ? -1 : b.index - a.index));
+
+  if (entries.length === 0) {
+    box.innerHTML = '<p class="muted small">まだ受けた記録がありません。</p>';
+    showScreen("history");
+    return;
+  }
+
+  box.innerHTML = "";
+  entries.forEach((e) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "history-btn";
+    const weak = weakUnitsOf(e.record);
+    btn.innerHTML =
+      `<span class="history-main">${escapeHtml(SUBJECTS[e.subject].label)}　${escapeHtml(e.record.date)}` +
+      `　<strong>${e.record.correct}/${e.record.total}</strong></span>` +
+      `<span class="history-sub">${weak.length ? "にがて: " + escapeHtml(weak.join("・")) : "にがて単元なし"}</span>`;
+    // 比較対象は同じ教科の1つ前の回
+    const prev = e.index > 0 ? store.history[e.subject][e.index - 1] : null;
+    btn.addEventListener("click", () => renderResult(e.subject, e.record, prev));
+    box.appendChild(btn);
+  });
+  showScreen("history");
+}
+
+/** 苦手しきい値を下回った単元名の配列（正答率の低い順） */
+function weakUnitsOf(record) {
+  return Object.entries(record.byUnit || {})
+    .map(([unit, c]) => ({ unit, pct: c.total ? c.correct / c.total : 0 }))
+    .filter((u) => u.pct < WEAK_THRESHOLD)
+    .sort((a, b) => a.pct - b.pct)
+    .map((u) => u.unit);
+}
+
+// --- 結果のテキスト書き出し（保護者が記録・共有するため） --------
+function buildResultText() {
+  if (!currentResultView) return "";
+  const { subject, record } = currentResultView;
+  const units = Object.entries(record.byUnit)
+    .map(([unit, c]) => ({ unit, correct: c.correct, total: c.total, pct: c.total ? c.correct / c.total : 0 }))
+    .sort((a, b) => a.pct - b.pct);
+  const askedUnits = record.units || Object.keys(record.byUnit);
+  const lines = [
+    `【がくりょくしんだん】${SUBJECTS[subject].label}　${record.date}`,
+    `スコア: ${record.correct}/${record.total}`,
+    `出題範囲: ${askedUnits.length}/${unitsOf(subject).length}単元（${askedUnits.join("・")}）`,
+  ];
+  if (units.length && units[0].pct < WEAK_THRESHOLD) {
+    lines.push(`最優先で対策すべき単元: ${units[0].unit}（${Math.round(units[0].pct * 100)}%）`);
+  } else {
+    lines.push("大きな苦手単元は見つかりませんでした");
+  }
+  lines.push("単元別:");
+  units.forEach((u) => {
+    const mark = u.pct < WEAK_THRESHOLD ? " ←にがて" : "";
+    lines.push(`- ${u.unit}: ${u.correct}/${u.total}（${Math.round(u.pct * 100)}%）${mark}`);
+  });
+  return lines.join("\n");
+}
+
+/**
+ * 全受験履歴を1つのMarkdownにまとめる。
+ * 人が読める表＋末尾に機械可読のJSONを入れ、記録・バックアップ・復元の
+ * どれにも使えるようにしている（スクショだと転記ミスが起きるため）
+ */
+function buildExportMarkdown() {
+  const lines = [`# がくりょくしんだん 受験記録（書き出し日: ${todayStr()}）`, ""];
+
+  Object.keys(SUBJECTS).forEach((subject) => {
+    const list = store.history[subject] || [];
+    lines.push(`## ${SUBJECTS[subject].label}`, "");
+    if (list.length === 0) {
+      lines.push("受験記録なし", "");
+      return;
+    }
+    list.forEach((record, i) => {
+      const askedUnits = record.units || Object.keys(record.byUnit);
+      const units = Object.entries(record.byUnit)
+        .map(([unit, c]) => ({ unit, correct: c.correct, total: c.total, pct: c.total ? c.correct / c.total : 0 }))
+        .sort((a, b) => a.pct - b.pct);
+      lines.push(`### ${i + 1}回目: ${record.date}（${record.correct}/${record.total}）`, "");
+      lines.push(`- 出題範囲: ${askedUnits.length}/${unitsOf(subject).length}単元（${askedUnits.join("・")}）`);
+      if (units.length && units[0].pct < WEAK_THRESHOLD) {
+        lines.push(`- 最優先で対策すべき単元: **${units[0].unit}**（${Math.round(units[0].pct * 100)}%）`);
+      } else {
+        lines.push("- 大きな苦手単元は見つかりませんでした");
+      }
+      lines.push("", "| 単元 | 正答 | 正答率 | 判定 |", "|---|---|---|---|");
+      units.forEach((u) => {
+        const mark = u.pct < WEAK_THRESHOLD ? "にがて" : "OK";
+        lines.push(`| ${u.unit} | ${u.correct}/${u.total} | ${Math.round(u.pct * 100)}% | ${mark} |`);
+      });
+      lines.push("");
+    });
+  });
+
+  lines.push("---", "", "<!-- 機械可読データ（復元用） -->", "```json", JSON.stringify(store), "```", "");
+  return lines.join("\n");
+}
+
+/** ダウンロード（共有シートが使えない環境のフォールバック） */
+function downloadTextFile(text, filename) {
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** 全履歴をファイル化し、iOSの共有シート（AirDrop等）で渡す */
+async function shareResultFile() {
+  const status = document.getElementById("copy-status");
+  const text = buildExportMarkdown();
+  const filename = `gakuryoku_shindan_${todayStr()}.md`;
+  const file = new File([text], filename, { type: "text/plain" });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: "がくりょくしんだん 受験記録" });
+      return;
+    } catch (e) {
+      if (e && e.name === "AbortError") return; // ユーザーが共有をキャンセルしただけ
+      console.warn("共有に失敗。ダウンロードに切り替えます", e);
+    }
+  }
+  downloadTextFile(text, filename);
+  status.textContent = `「${filename}」を保存しました（ファイルAppを確認してください）。`;
+  status.classList.remove("hidden");
+}
+
+/** クリップボードへコピー。失敗時は手動コピー用のテキスト欄を出す */
+function copyResult() {
+  const text = buildResultText();
+  if (!text) return;
+  const status = document.getElementById("copy-status");
+  const fallback = document.getElementById("copy-fallback");
+
+  const showFallback = () => {
+    fallback.value = text;
+    fallback.classList.remove("hidden");
+    fallback.focus();
+    fallback.select();
+    status.textContent = "自動コピーできませんでした。下の文章を長押しでコピーしてください。";
+    status.classList.remove("hidden");
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        status.textContent = "コピーしました！メモやLINEに貼り付けられます。";
+        status.classList.remove("hidden");
+        fallback.classList.add("hidden");
+      })
+      .catch(showFallback);
+  } else {
+    showFallback();
+  }
+}
+
 // ============================================================
 // イベント結線・初期化
 // ============================================================
 function bindEvents() {
-  document.getElementById("btn-start-sansu").addEventListener("click", () => startQuiz("sansu"));
-  document.getElementById("btn-start-shakai").addEventListener("click", () => startQuiz("shakai"));
+  document.getElementById("btn-start-sansu").addEventListener("click", () => openScope("sansu"));
+  document.getElementById("btn-start-shakai").addEventListener("click", () => openScope("shakai"));
+  document.getElementById("btn-scope-start").addEventListener("click", startFromScope);
+  document.getElementById("btn-scope-back").addEventListener("click", renderHome);
+  document.getElementById("btn-scope-all").addEventListener("click", () => toggleAllScope(true));
+  document.getElementById("btn-scope-none").addEventListener("click", () => toggleAllScope(false));
   document.getElementById("btn-quiz-quit").addEventListener("click", quitQuiz);
   document.getElementById("btn-quiz-next").addEventListener("click", nextQuestion);
   document.getElementById("btn-result-home").addEventListener("click", renderHome);
+  document.getElementById("btn-open-history").addEventListener("click", renderHistory);
+  document.getElementById("btn-history-home").addEventListener("click", renderHome);
+  document.getElementById("btn-copy-result").addEventListener("click", copyResult);
+  document.getElementById("btn-share-result").addEventListener("click", shareResultFile);
 }
 
 function main() {

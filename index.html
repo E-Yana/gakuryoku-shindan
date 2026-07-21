@@ -34,7 +34,42 @@
       <button id="btn-start-shakai" class="big-btn">▶ 社会をはじめる</button>
     </div>
 
+    <button id="btn-open-history" class="text-btn">📄 まえの結果を みる</button>
+
     <p class="muted small note">※ これは「クイズ」だよ。わからなくても だいじょうぶ、今の力を知るためのものだよ。</p>
+  </section>
+
+  <!-- ============ 履歴画面（過去の受験結果を再表示） ============ -->
+  <section id="screen-history" class="screen hidden">
+    <header class="app-header">
+      <h1>まえの結果</h1>
+      <p class="muted small">見たい回をえらんでね</p>
+    </header>
+
+    <div class="panel">
+      <div id="history-list"></div>
+    </div>
+
+    <button id="btn-history-home" class="big-btn primary">ホームへ もどる</button>
+  </section>
+
+  <!-- ============ 範囲えらび画面（未習単元を出題から外す） ============ -->
+  <section id="screen-scope" class="screen hidden">
+    <header class="app-header">
+      <h1>ならったところを えらぼう</h1>
+      <p class="muted small"><span id="scope-subject-label"></span>で <strong>まだならっていない</strong>ものは チェックを外してね</p>
+    </header>
+
+    <div class="panel">
+      <div class="scope-tools">
+        <button id="btn-scope-all" class="text-btn small">ぜんぶ えらぶ</button>
+        <button id="btn-scope-none" class="text-btn small">ぜんぶ 外す</button>
+      </div>
+      <div id="scope-list"></div>
+    </div>
+
+    <button id="btn-scope-start" class="big-btn primary">▶ このはんいで はじめる</button>
+    <button id="btn-scope-back" class="text-btn">もどる</button>
   </section>
 
   <!-- ============ クイズ画面 ============ -->
@@ -74,11 +109,22 @@
 
     <div class="panel">
       <h2>単元別 苦手マップ</h2>
+      <p id="result-scope-note" class="muted small"></p>
       <div id="result-unit-map"></div>
     </div>
 
     <div class="panel" id="result-compare-panel">
       <div id="result-compare"></div>
+    </div>
+
+    <!-- 保護者向け: 結果をテキストで書き出して記録・共有する -->
+    <div class="panel">
+      <h2>おうちの人へ</h2>
+      <button id="btn-share-result" class="big-btn primary">📤 結果を ファイルで わたす</button>
+      <p class="muted small">AirDropでMacへ送る／ファイルAppに保存（全履歴・バックアップ兼用）</p>
+      <button id="btn-copy-result" class="big-btn">📋 この回だけ コピー</button>
+      <p id="copy-status" class="muted small hidden"></p>
+      <textarea id="copy-fallback" class="copy-fallback hidden" readonly rows="10"></textarea>
     </div>
 
     <button id="btn-result-home" class="big-btn primary">ホームへ もどる</button>
