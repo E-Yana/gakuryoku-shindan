@@ -11,6 +11,10 @@
 const STORE_KEY = "gakuryokuShindan_v1";
 const WEAK_THRESHOLD = 0.6; // この正答率未満の単元を「苦手」として赤ハイライト
 
+// アプリの表示用バージョン。中身を更新したら sw.js の CACHE と対で必ずインクリメントする
+// （ホーム画面に表示することで、iPad側で更新が反映されたか目視確認できるようにする）
+const APP_VERSION = "v6";
+
 const SUBJECTS = {
   sansu: { label: "算数", bankKey: "SANSU_PROBLEMS" },
   shakai: { label: "社会", bankKey: "SHAKAI_PROBLEMS" },
@@ -93,6 +97,7 @@ function showScreen(name) {
 function renderHome() {
   renderHistorySummary("sansu", "home-history-sansu");
   renderHistorySummary("shakai", "home-history-shakai");
+  document.getElementById("app-version").textContent = APP_VERSION;
   showScreen("home");
 }
 
