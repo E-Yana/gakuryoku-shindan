@@ -232,7 +232,9 @@ function selectChoice(choice, p, btnEl) {
     else if (b === btnEl && !ok) b.classList.add("ng");
   });
 
-  quizState.results[p.id] = { ok, unit: p.unit };
+  // 誤答の中身（何と答えたか）まで残す。単元別正答率だけでは
+  // 「何が分かっていないか」が分からず、ドリル選定に使えないため
+  quizState.results[p.id] = { ok, unit: p.unit, chosen: choice, question: p.question, answer: p.answer };
 
   document.getElementById("quiz-feedback-msg").textContent = ok ? "せいかい！🎉" : "おしい！";
   document.getElementById("quiz-explanation").textContent = p.explanation || "";
@@ -271,8 +273,19 @@ function finishQuiz() {
     if (ok) byUnit[unit].correct += 1;
   });
 
+  // 誤答した問題の中身（ドリル選定の材料）。正答のみの回は空配列
+  const wrongs = ids
+    .filter((id) => !results[id].ok)
+    .map((id) => ({
+      id,
+      unit: results[id].unit,
+      question: results[id].question,
+      answer: results[id].answer,
+      chosen: results[id].chosen,
+    }));
+
   // 履歴に保存（受験日つき）
-  const record = { date: todayStr(), correct: okCount, total, byUnit, units: quizState.units };
+  const record = { date: todayStr(), correct: okCount, total, byUnit, units: quizState.units, wrongs };
   const list = store.history[subject];
   const prev = list.length > 0 ? list[list.length - 1] : null; // 保存前の最終回＝前回
   list.push(record);
@@ -336,6 +349,9 @@ function renderResult(subject, record, prevRecord) {
       "</tbody></table>";
   }
 
+  // まちがえた問題（ドリル選定の材料）
+  renderWrongs(record);
+
   // 前回との比較（before/after）
   renderComparison(prevRecord, record);
 
@@ -346,6 +362,29 @@ function renderResult(subject, record, prevRecord) {
   fallback.value = "";
 
   showScreen("result");
+}
+
+/** 誤答した問題を「何と答えたか」つきで並べる（ドリル選定の材料） */
+function renderWrongs(record) {
+  const box = document.getElementById("result-wrongs");
+  const wrongs = record.wrongs || []; // 旧レコードにはこのフィールドが無い
+  if (wrongs.length === 0) {
+    box.innerHTML = "";
+    document.getElementById("result-wrongs-panel").classList.add("hidden");
+    return;
+  }
+  document.getElementById("result-wrongs-panel").classList.remove("hidden");
+  box.innerHTML =
+    "<h2>まちがえた問題</h2>" +
+    "<table class='unit-table'><thead><tr><th>単元</th><th>問題</th><th>正解</th><th>答えたもの</th></tr></thead><tbody>" +
+    wrongs
+      .map(
+        (w) =>
+          `<tr><td>${escapeHtml(w.unit)}</td><td>${escapeHtml(w.question)}</td>` +
+          `<td>${escapeHtml(w.answer)}</td><td>${escapeHtml(w.chosen || "-")}</td></tr>`
+      )
+      .join("") +
+    "</tbody></table>";
 }
 
 /** 2回分を並べて比較表示（Week0 vs Week6 の before/after 用） */
@@ -483,6 +522,12 @@ function buildExportMarkdown() {
         const mark = u.pct < WEAK_THRESHOLD ? "にがて" : "OK";
         lines.push(`| ${u.unit} | ${u.correct}/${u.total} | ${Math.round(u.pct * 100)}% | ${mark} |`);
       });
+      if (record.wrongs && record.wrongs.length) {
+        lines.push("", "**まちがえた問題**", "", "| 単元 | 問題 | 正解 | 答えたもの |", "|---|---|---|---|");
+        record.wrongs.forEach((w) => {
+          lines.push(`| ${w.unit} | ${w.question} | ${w.answer} | ${w.chosen || "-"} |`);
+        });
+      }
       lines.push("");
     });
   });

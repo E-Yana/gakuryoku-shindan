@@ -14,6 +14,12 @@ window.SANSU_PROBLEMS = [
     answer: "平行", distractors: ["垂直", "対角線"], explanation: "どこまでのばしても交わらない2直線は「平行」" },
   { id: "s-0003", unit: "図形:垂直平行", question: "長方形の、となり合った2つの辺の関係は？",
     answer: "垂直", distractors: ["平行", "対角線"], explanation: "長方形のとなり合う辺は直角に交わるので「垂直」" },
+  { id: "s-0029", unit: "図形:垂直平行", question: "1本の直線に垂直な2本の直線どうしの関係は？",
+    answer: "平行", distractors: ["垂直", "交わる"], explanation: "同じ直線に垂直な2直線どうしは平行になる" },
+  { id: "s-0030", unit: "図形:垂直平行", question: "平行な2本の直線のはばは、どこをはかると？",
+    answer: "どこも同じ", distractors: ["場所によってちがう", "はしほどせまい"], explanation: "平行な2直線のはばはどこでも等しい" },
+  { id: "s-0031", unit: "図形:垂直平行", question: "直線アと直線イが平行で、直線イと直線ウも平行のとき、アとウの関係は？",
+    answer: "平行", distractors: ["垂直", "交わる"], explanation: "同じ直線に平行な2直線どうしも平行になる" },
 
   // --- 図形:四角形の定義（最優先） ---
   { id: "s-0004", unit: "図形:四角形の定義", question: "向かい合った2組の辺がどちらも平行な四角形は？",
@@ -30,6 +36,12 @@ window.SANSU_PROBLEMS = [
     answer: "ひし形", distractors: ["台形", "長方形"], explanation: "ひし形の対角線は垂直に交わる" },
   { id: "s-0009", unit: "図形:対角線", question: "2本の対角線の長さが等しい四角形はどれ？",
     answer: "長方形", distractors: ["平行四辺形", "ひし形"], explanation: "長方形の対角線は長さが等しい" },
+  { id: "s-0026", unit: "図形:対角線", question: "四角形に対角線は何本ひける？",
+    answer: "2本", distractors: ["1本", "4本"], explanation: "四角形の対角線は2本" },
+  { id: "s-0027", unit: "図形:対角線", question: "2本の対角線が、長さも等しく、しかも垂直に交わる四角形はどれ？",
+    answer: "正方形", distractors: ["ひし形", "長方形"], explanation: "正方形は長方形とひし形の性質を両方もつ" },
+  { id: "s-0028", unit: "図形:対角線", question: "平行四辺形の2本の対角線は、交わった点でどうなっている？",
+    answer: "それぞれ2等分されている", distractors: ["直角に交わっている", "長さが等しい"], explanation: "平行四辺形の対角線はたがいを2等分する" },
 
   // --- 大きな数 ---
   { id: "s-0010", unit: "大きな数", question: "一億を10こ集めた数は？",
