@@ -90,4 +90,98 @@ window.SANSU_PROBLEMS = [
     answer: "増えている", distractors: ["減っている", "変わっていない"], explanation: "右上がり＝値が増えている" },
   { id: "s-0025", unit: "グラフ・表", question: "折れ線グラフで、線が右下がりになっているとき、数値はどう変化している？",
     answer: "減っている", distractors: ["増えている", "変わっていない"], explanation: "右下がり＝値が減っている" },
+
+  // ============================================================
+  // 2026-09-08 追加：全単元スイープ（親が把握していない苦手の洗い出し）
+  //   - 2問しかなかった8単元を4問へ増問（3択2問では推測と区別できないため）
+  //   - 未収録だった4単元（計算のきまり／変わり方／直方体と立方体／小数のしくみ）を新設
+  // ============================================================
+
+  // --- 大きな数（増問） ---
+  { id: "s-0032", unit: "大きな数", question: "三億五千万を数字で書くと？",
+    answer: "350000000", distractors: ["35000000", "3500000000"], explanation: "一億が3こと千万が5こ＝350000000（0が7こ）" },
+  { id: "s-0033", unit: "大きな数", question: "一兆は、一億を何こ集めた数？",
+    answer: "1万こ", distractors: ["1000こ", "100万こ"], explanation: "億の1万倍が兆" },
+
+  // --- わり算の筆算（増問） ---
+  { id: "s-0034", unit: "わり算の筆算", question: "900 ÷ 30 = ?",
+    answer: "30", distractors: ["3", "300"], explanation: "90÷3=30。0を同じ数だけ消して考える" },
+  { id: "s-0035", unit: "わり算の筆算", question: "145 ÷ 7 のあまりは？",
+    answer: "5", distractors: ["3", "6"], explanation: "7×20=140、145-140=5" },
+
+  // --- がい数（増問） ---
+  { id: "s-0036", unit: "がい数", question: "27364 を四捨五入して上から2けたのがい数にすると？",
+    answer: "27000", distractors: ["28000", "27400"], explanation: "上から3けた目の3を四捨五入して切り捨て" },
+  { id: "s-0037", unit: "がい数", question: "千の位までのがい数にしたとき「4000」になる数はどれ？",
+    answer: "3500", distractors: ["3499", "4500"], explanation: "3500は切り上げて4000。3499は3000、4500は5000になる" },
+
+  // --- 小数の計算（増問：たし算・ひき算） ---
+  { id: "s-0038", unit: "小数の計算", question: "1.4 + 2.7 = ?",
+    answer: "4.1", distractors: ["3.1", "4.11"], explanation: "小数点をそろえて計算する" },
+  { id: "s-0039", unit: "小数の計算", question: "5 - 0.8 = ?",
+    answer: "4.2", distractors: ["5.2", "4.8"], explanation: "5を5.0と考えて計算する" },
+
+  // --- 分数（増問） ---
+  { id: "s-0040", unit: "分数", question: "2と1/5 を仮分数に直すと？",
+    answer: "11/5", distractors: ["7/5", "10/5"], explanation: "2×5+1=11 なので 11/5" },
+  { id: "s-0041", unit: "分数", question: "1 - 2/5 = ?",
+    answer: "3/5", distractors: ["2/5", "1/5"], explanation: "1を5/5と考えて 5/5-2/5=3/5" },
+
+  // --- 面積（増問） ---
+  { id: "s-0042", unit: "面積", question: "1辺が1mの正方形の面積は何cm²？",
+    answer: "10000cm²", distractors: ["100cm²", "1000cm²"], explanation: "100cm×100cm=10000cm²" },
+  { id: "s-0043", unit: "面積", question: "面積が24cm²で、たてが4cmの長方形のよこの長さは？",
+    answer: "6cm", distractors: ["8cm", "20cm"], explanation: "24÷4=6" },
+
+  // --- 角度（増問） ---
+  { id: "s-0044", unit: "角度", question: "一直線の角度は？",
+    answer: "180°", distractors: ["90°", "360°"], explanation: "半回転＝180°" },
+  { id: "s-0045", unit: "角度", question: "時計の長いはりが15分で回る角度は？",
+    answer: "90°", distractors: ["15°", "180°"], explanation: "15分は1回転の4分の1＝360÷4=90°" },
+
+  // --- グラフ・表（増問） ---
+  { id: "s-0046", unit: "グラフ・表", question: "折れ線グラフで、線のかたむきが急なところは、変わり方がどうなっている？",
+    answer: "大きく変わっている", distractors: ["変わっていない", "少しだけ変わっている"], explanation: "かたむきが急なほど変化が大きい" },
+  { id: "s-0047", unit: "グラフ・表", question: "1日の気温の変わり方を調べるのに合っているグラフは？",
+    answer: "折れ線グラフ", distractors: ["ぼうグラフ", "円グラフ"], explanation: "変わり方を見るときは折れ線グラフ" },
+
+  // --- 計算のきまり（新設） ---
+  { id: "s-0048", unit: "計算のきまり", question: "12 + 8 × 3 の答えは？",
+    answer: "36", distractors: ["60", "44"], explanation: "かけ算を先に計算する。8×3=24、12+24=36" },
+  { id: "s-0049", unit: "計算のきまり", question: "(7 + 3) × 5 の答えは？",
+    answer: "50", distractors: ["22", "35"], explanation: "( )の中を先に計算する。10×5=50" },
+  { id: "s-0050", unit: "計算のきまり", question: "25 × 4 × 7 を計算しやすくするには、どこを先に計算する？",
+    answer: "25×4を先に", distractors: ["4×7を先に", "かならず左から順に"], explanation: "25×4=100になり計算が楽になる" },
+  { id: "s-0051", unit: "計算のきまり", question: "100 - (30 + 45) の答えは？",
+    answer: "25", distractors: ["115", "85"], explanation: "( )の中を先に。30+45=75、100-75=25" },
+
+  // --- 変わり方（新設） ---
+  { id: "s-0052", unit: "変わり方", question: "正方形の1辺の長さ□cmと、まわりの長さ○cmの関係を式にすると？",
+    answer: "○=□×4", distractors: ["○=□+4", "○=□×□"], explanation: "辺が4つあるので□×4" },
+  { id: "s-0053", unit: "変わり方", question: "1個80円のパンを□個買ったときの代金○円を式にすると？",
+    answer: "○=80×□", distractors: ["○=80+□", "○=80÷□"], explanation: "1個の値段×個数＝代金" },
+  { id: "s-0054", unit: "変わり方", question: "18このあめを□人で同じ数ずつ分けるとき、1人分○こを式にすると？",
+    answer: "○=18÷□", distractors: ["○=18×□", "○=18-□"], explanation: "全体÷人数＝1人分" },
+  { id: "s-0055", unit: "変わり方", question: "たすと20になる2つの数□と○の関係を式にすると？",
+    answer: "○=20-□", distractors: ["○=20+□", "○=20÷□"], explanation: "□が決まれば残りが○になる" },
+
+  // --- 直方体と立方体（新設） ---
+  { id: "s-0056", unit: "直方体と立方体", question: "立方体の面はいくつある？",
+    answer: "6つ", distractors: ["4つ", "8つ"], explanation: "さいころと同じで面は6つ" },
+  { id: "s-0057", unit: "直方体と立方体", question: "直方体の頂点はいくつある？",
+    answer: "8つ", distractors: ["6つ", "12こ"], explanation: "角（かど）が8つ" },
+  { id: "s-0058", unit: "直方体と立方体", question: "直方体の辺は何本ある？",
+    answer: "12本", distractors: ["8本", "6本"], explanation: "たて・よこ・高さが4本ずつで12本" },
+  { id: "s-0059", unit: "直方体と立方体", question: "直方体で、1つの面に垂直な面はいくつある？",
+    answer: "4つ", distractors: ["2つ", "6つ"], explanation: "向かい合う面は平行、まわりの4つが垂直" },
+
+  // --- 小数のしくみ（新設：位取りの理解。計算とは分けて測る） ---
+  { id: "s-0060", unit: "小数のしくみ", question: "0.1 を10こ集めた数は？",
+    answer: "1", distractors: ["0.01", "10"], explanation: "0.1が10こで1になる" },
+  { id: "s-0061", unit: "小数のしくみ", question: "3.14 の「1」は何の位？",
+    answer: "10分の1の位", distractors: ["100分の1の位", "一の位"], explanation: "小数第一位＝10分の1の位" },
+  { id: "s-0062", unit: "小数のしくみ", question: "0.01 を100こ集めた数は？",
+    answer: "1", distractors: ["0.1", "10"], explanation: "0.01×100=1" },
+  { id: "s-0063", unit: "小数のしくみ", question: "2.5 を10倍した数は？",
+    answer: "25", distractors: ["0.25", "250"], explanation: "10倍すると小数点が右に1つ動く" },
 ];

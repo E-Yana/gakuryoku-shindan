@@ -1,12 +1,13 @@
 // service worker: オフラインで使えるよう、アプリ一式をキャッシュする
 // 中身を更新したら CACHE バージョン名を上げること（古いキャッシュを破棄）
-const CACHE = "gakuryoku-shindan-v6";
+const CACHE = "gakuryoku-shindan-v7";
 const ASSETS = [
   "./",
   "./index.html",
   "./style.css",
   "./app.js",
   "./sansu_data.js",
+  "./kokugo_data.js",
   "./shakai_data.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",

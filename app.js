@@ -13,10 +13,11 @@ const WEAK_THRESHOLD = 0.6; // この正答率未満の単元を「苦手」と�
 
 // アプリの表示用バージョン。中身を更新したら sw.js の CACHE と対で必ずインクリメントする
 // （ホーム画面に表示することで、iPad側で更新が反映されたか目視確認できるようにする）
-const APP_VERSION = "v6";
+const APP_VERSION = "v7";
 
 const SUBJECTS = {
   sansu: { label: "算数", bankKey: "SANSU_PROBLEMS" },
+  kokugo: { label: "国語", bankKey: "KOKUGO_PROBLEMS" },
   shakai: { label: "社会", bankKey: "SHAKAI_PROBLEMS" },
 };
 
@@ -34,7 +35,7 @@ let store = loadStore();
 
 function loadStore() {
   // learned: 教科ごとの「ならった単元」リスト（未設定なら全単元を対象とする）
-  const init = { history: { sansu: [], shakai: [] }, learned: {} };
+  const init = { history: { sansu: [], kokugo: [], shakai: [] }, learned: {} };
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return init;
@@ -96,6 +97,7 @@ function showScreen(name) {
 // --- ホーム画面 ----------------------------------------------
 function renderHome() {
   renderHistorySummary("sansu", "home-history-sansu");
+  renderHistorySummary("kokugo", "home-history-kokugo");
   renderHistorySummary("shakai", "home-history-shakai");
   document.getElementById("app-version").textContent = APP_VERSION;
   showScreen("home");
@@ -610,6 +612,7 @@ function copyResult() {
 // ============================================================
 function bindEvents() {
   document.getElementById("btn-start-sansu").addEventListener("click", () => openScope("sansu"));
+  document.getElementById("btn-start-kokugo").addEventListener("click", () => openScope("kokugo"));
   document.getElementById("btn-start-shakai").addEventListener("click", () => openScope("shakai"));
   document.getElementById("btn-scope-start").addEventListener("click", startFromScope);
   document.getElementById("btn-scope-back").addEventListener("click", renderHome);
