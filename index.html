@@ -107,6 +107,17 @@
       <p id="quiz-explanation" class="muted small"></p>
       <button id="btn-quiz-next" class="big-btn primary">つぎへ</button>
     </div>
+
+    <!-- 「やめる」を押した時の確認（途中保存が有効な教科で、1問以上こたえている時だけ表示） -->
+    <div id="quit-dialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="quit-dialog-title">
+      <div class="modal-box">
+        <p id="quit-dialog-title" class="modal-title">とちゅうまでの こたえを ほぞんしますか？</p>
+        <p class="muted small">ほぞんすると、ホームの「つづきから」で またできるよ。</p>
+        <button id="btn-quit-save" class="big-btn primary">ほぞんして やめる</button>
+        <button id="btn-quit-discard" class="big-btn">ほぞんしないで やめる<br><span class="small">（こたえは きえるよ）</span></button>
+        <button id="btn-quit-cancel" class="text-btn">もどる</button>
+      </div>
+    </div>
   </section>
 
   <!-- ============ 結果画面 ============ -->

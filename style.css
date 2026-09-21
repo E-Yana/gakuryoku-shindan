@@ -98,6 +98,26 @@ html, body {
 .small { font-size: 13px; }
 .resume-note { text-align: center; margin: 0 0 4px; }
 
+/* 「やめる」の確認ダイアログ（画面全体をうすく覆って中央にカードを出す） */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(33, 48, 64, 0.5);
+}
+.modal-box {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px 16px 12px;
+}
+.modal-title { font-size: 18px; font-weight: 700; margin: 0 0 6px; text-align: center; }
+
 /* ============ クイズ画面 ============ */
 .quiz-top {
   display: flex;

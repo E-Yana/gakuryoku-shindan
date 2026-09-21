@@ -15,7 +15,7 @@ const WEAK_THRESHOLD = 0.6; // この正答率未満の単元を「苦手」と�
 
 // アプリの表示用バージョン。中身を更新したら sw.js の CACHE と対で必ずインクリメントする
 // （ホーム画面に表示することで、iPad側で更新が反映されたか目視確認できるようにする）
-const APP_VERSION = "v8";
+const APP_VERSION = "v9";
 
 // resumable: true の教科だけ「途中保存・つづきから」が有効（未設定＝従来動作）
 const SUBJECTS = {
@@ -450,10 +450,46 @@ function nextQuestion() {
   }
 }
 
+/**
+ * 「やめる」。途中保存が有効な教科で1問以上こたえていれば「ほぞんしますか？」を出す。
+ * それ以外（国語・社会／まだ1問もこたえていない）は従来どおりそのままホームへ戻る
+ */
 function quitQuiz() {
-  // 回答は1問ごとに saveProgress() で保存済みのため、ここでは何も保存せずメモリ上の状態を捨てるだけでよい
+  if (quizState && isResumable(quizState.subject) && Object.keys(quizState.results).length > 0) {
+    setQuitDialogVisible(true);
+    return;
+  }
+  leaveQuiz();
+}
+
+/** クイズ画面を離れてホームへ戻る（メモリ上の状態を捨てる） */
+function leaveQuiz() {
   quizState = null;
   renderHome();
+}
+
+function setQuitDialogVisible(visible) {
+  document.getElementById("quit-dialog").classList.toggle("hidden", !visible);
+}
+
+/** 「ほぞんして やめる」。保存できなかった時は、消えたことに気づけるよう画面に残して知らせる */
+function quitWithSave() {
+  if (!saveProgress()) {
+    alert("ほぞんできなかったよ。もういちど ためしてね。");
+    return;
+  }
+  setQuitDialogVisible(false);
+  leaveQuiz();
+}
+
+/** 「ほぞんしないで やめる」。この教科の途中保存を破棄してホームへ（破棄できなかった時は知らせて画面に残す） */
+function quitWithoutSave() {
+  if (!discardProgress(quizState.subject)) {
+    alert("けせなかったよ。もういちど ためしてね。");
+    return;
+  }
+  setQuitDialogVisible(false);
+  leaveQuiz();
 }
 
 /** 途中保存から再開する。最初の未回答問題から始め、未回答が無ければそのまま結果へ進む */
@@ -836,6 +872,13 @@ function bindEvents() {
   document.getElementById("btn-scope-all").addEventListener("click", () => toggleAllScope(true));
   document.getElementById("btn-scope-none").addEventListener("click", () => toggleAllScope(false));
   document.getElementById("btn-quiz-quit").addEventListener("click", quitQuiz);
+  document.getElementById("btn-quit-save").addEventListener("click", quitWithSave);
+  document.getElementById("btn-quit-discard").addEventListener("click", quitWithoutSave);
+  document.getElementById("btn-quit-cancel").addEventListener("click", () => setQuitDialogVisible(false));
+  // カードの外（うす暗い部分）を押したら「もどる」と同じ扱い
+  document.getElementById("quit-dialog").addEventListener("click", (e) => {
+    if (e.target.id === "quit-dialog") setQuitDialogVisible(false);
+  });
   document.getElementById("btn-quiz-next").addEventListener("click", nextQuestion);
   document.getElementById("btn-result-home").addEventListener("click", renderHome);
   document.getElementById("btn-open-history").addEventListener("click", renderHistory);
