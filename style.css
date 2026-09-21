@@ -96,6 +96,7 @@ html, body {
 
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
+.resume-note { text-align: center; margin: 0 0 4px; }
 
 /* ============ クイズ画面 ============ */
 .quiz-top {

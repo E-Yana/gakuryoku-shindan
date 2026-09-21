@@ -9,14 +9,17 @@
 "use strict";
 
 const STORE_KEY = "gakuryokuShindan_v1";
+// 途中保存（つづきから用）。履歴(STORE_KEY)とは別キーにして、履歴の形式・書き出しへ混ざらないようにする
+const PROGRESS_KEY = "gakuryokuShindan_progress_v1";
 const WEAK_THRESHOLD = 0.6; // この正答率未満の単元を「苦手」として赤ハイライト
 
 // アプリの表示用バージョン。中身を更新したら sw.js の CACHE と対で必ずインクリメントする
 // （ホーム画面に表示することで、iPad側で更新が反映されたか目視確認できるようにする）
-const APP_VERSION = "v7";
+const APP_VERSION = "v8";
 
+// resumable: true の教科だけ「途中保存・つづきから」が有効（未設定＝従来動作）
 const SUBJECTS = {
-  sansu: { label: "算数", bankKey: "SANSU_PROBLEMS" },
+  sansu: { label: "算数", bankKey: "SANSU_PROBLEMS", resumable: true },
   kokugo: { label: "国語", bankKey: "KOKUGO_PROBLEMS" },
   shakai: { label: "社会", bankKey: "SHAKAI_PROBLEMS" },
 };
@@ -50,18 +53,174 @@ function loadStore() {
   }
 }
 
+/** 履歴ストアを保存する。成功なら true、失敗なら false（失敗時は従来どおりアラートを出す） */
 function saveStore() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify(store));
+    return true;
   } catch (e) {
     alert("保存に失敗しました。ブラウザの空き容量をご確認ください。");
     console.error(e);
+    return false;
   }
 }
 
 // --- 問題バンク ------------------------------------------------
 function bankFor(subject) {
   return window[SUBJECTS[subject].bankKey] || [];
+}
+
+// --- 途中保存（つづきから） ------------------------------------
+// 保存形式: { [subject]: { ids:[], results:{}, units:[], savedAt:"YYYY-MM-DD", recorded?:true } }
+//   - 再開位置は保存せず、ids のうち最初に results が無いものから導出する（位置と回答のズレを作らない）
+//   - recorded は「この回は履歴へ記録済み」の印。破棄が失敗して残っても、履歴へ二重に足さないために使う
+//   - 履歴(STORE_KEY)には一切触れない。読み込み失敗・形不正は必ず「途中保存なし」として扱う
+
+/** 自前プロパティを持つか（IDがプロトタイプ名と衝突しても誤判定しないため） */
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+/** その教科で途中保存が有効か */
+function isResumable(subject) {
+  return Boolean(SUBJECTS[subject] && SUBJECTS[subject].resumable);
+}
+
+/** 途中保存キーの全体を読む。未保存・壊れている・形が違う場合は空オブジェクト */
+function readProgressAll() {
+  try {
+    const raw = localStorage.getItem(PROGRESS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return parsed;
+  } catch (e) {
+    console.warn("途中保存の読込に失敗。無いものとして扱います", e);
+    return {};
+  }
+}
+
+/** 途中保存キーの全体を書く。空なら消す。成功なら true、失敗なら false（画面には警告を出さない） */
+function writeProgressAll(all) {
+  try {
+    if (Object.keys(all).length === 0) {
+      localStorage.removeItem(PROGRESS_KEY);
+    } else {
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+    }
+    return true;
+  } catch (e) {
+    console.warn("途中保存の書込に失敗（学習は続けられます）", e);
+    return false;
+  }
+}
+
+/** 教科の途中保存を破棄する。成功（元から無い場合を含む）なら true */
+function discardProgress(subject) {
+  const all = readProgressAll();
+  if (!hasOwn(all, subject)) return true;
+  delete all[subject];
+  return writeProgressAll(all);
+}
+
+/** 途中保存に「履歴へ記録済み」の印を書く。成功なら true */
+function markProgressRecorded(subject) {
+  const all = readProgressAll();
+  if (!hasOwn(all, subject) || all[subject] === null || typeof all[subject] !== "object") return false;
+  all[subject].recorded = true;
+  return writeProgressAll(all);
+}
+
+/** 保存された1問分の回答が、集計に使える形か */
+function isValidResult(r) {
+  return (
+    r !== null &&
+    typeof r === "object" &&
+    typeof r.ok === "boolean" &&
+    typeof r.unit === "string" &&
+    typeof r.chosen === "string" &&
+    typeof r.question === "string" &&
+    typeof r.answer === "string"
+  );
+}
+
+/**
+ * 保存データを現行の問題バンクと突き合わせて整える。
+ * バンクに無い問題IDを出題順と回答の両方から除去し、範囲（単元）も現行の単元一覧で絞る。
+ * 出題順または回答が空になったら null（＝途中保存なし）。
+ */
+function sanitizeProgress(subject, entry) {
+  if (entry === null || typeof entry !== "object") return null;
+  if (!Array.isArray(entry.ids) || !Array.isArray(entry.units)) return null;
+  if (entry.results === null || typeof entry.results !== "object" || Array.isArray(entry.results)) return null;
+  if (typeof entry.savedAt !== "string") return null;
+
+  const bank = bankFor(subject);
+  const bankIds = new Set(bank.map((p) => p.id));
+  const ids = Array.from(new Set(entry.ids.filter((id) => typeof id === "string" && bankIds.has(id))));
+  const idSet = new Set(ids);
+
+  const results = {};
+  Object.keys(entry.results).forEach((id) => {
+    if (idSet.has(id) && isValidResult(entry.results[id])) results[id] = entry.results[id];
+  });
+  if (ids.length === 0 || Object.keys(results).length === 0) return null;
+
+  const all = unitsOf(subject);
+  let units = entry.units.filter((u) => all.includes(u));
+  if (units.length === 0) {
+    // 範囲が全て無効になった場合は、残った問題の単元から復元する（記録の出題範囲が空にならないように）
+    units = all.filter((u) => bank.some((p) => idSet.has(p.id) && p.unit === u));
+  }
+  return { ids, results, units, savedAt: entry.savedAt };
+}
+
+/**
+ * 途中保存を読む。使える途中保存があればサニタイズ済みの内容を返し、無ければ null。
+ * 記録済みの印つき・サニタイズ後に空になったものは該当キーを破棄する（履歴には触れない）。
+ */
+function loadProgress(subject) {
+  if (!isResumable(subject)) return null;
+  const all = readProgressAll();
+  if (!hasOwn(all, subject)) return null;
+  const entry = all[subject];
+  if (entry !== null && typeof entry === "object" && entry.recorded === true) {
+    discardProgress(subject);
+    return null;
+  }
+  const clean = sanitizeProgress(subject, entry);
+  if (!clean) {
+    discardProgress(subject);
+    return null;
+  }
+  return clean;
+}
+
+/** 現在のクイズ状態を途中保存する。対象外の教科・回答0件の時は何もしない（失敗は console.warn のみ） */
+function saveProgress() {
+  if (!quizState || !isResumable(quizState.subject)) return false;
+  if (Object.keys(quizState.results).length === 0) return false;
+  const all = readProgressAll();
+  all[quizState.subject] = {
+    ids: quizState.ids,
+    results: quizState.results,
+    units: quizState.units,
+    savedAt: todayStr(),
+  };
+  return writeProgressAll(all);
+}
+
+/** 履歴への記録に成功した後の後始末。①記録済みの印 → ②破棄 の順（②が失敗しても印で二重加算を防ぐ） */
+function settleProgressAfterRecord(subject) {
+  if (!isResumable(subject)) return;
+  markProgressRecorded(subject);
+  discardProgress(subject);
+}
+
+/** ids のうち最初に回答が無い位置。全問回答済みなら ids.length */
+function firstUnansweredIndex(ids, results) {
+  const i = ids.findIndex((id) => !hasOwn(results, id));
+  return i === -1 ? ids.length : i;
 }
 
 // --- 共通ユーティリティ ----------------------------------------
@@ -99,6 +258,7 @@ function renderHome() {
   renderHistorySummary("sansu", "home-history-sansu");
   renderHistorySummary("kokugo", "home-history-kokugo");
   renderHistorySummary("shakai", "home-history-shakai");
+  Object.keys(SUBJECTS).filter(isResumable).forEach(renderResumeBox);
   document.getElementById("app-version").textContent = APP_VERSION;
   showScreen("home");
 }
@@ -115,6 +275,36 @@ function renderHistorySummary(subject, elId) {
   const last = list[list.length - 1];
   el.innerHTML =
     `<p class="small">受験回数: ${list.length}回／直近: ${escapeHtml(last.date)}（${last.correct}/${last.total}）</p>`;
+}
+
+/**
+ * 途中保存があれば「つづきから」ボックスを出し、通常の「はじめる」ボタンを隠す。
+ * 表示するのは回答数と保存日だけ（正答率は出さない）
+ */
+function renderResumeBox(subject) {
+  const box = document.getElementById(`home-resume-${subject}`);
+  const startBtn = document.getElementById(`btn-start-${subject}`);
+  if (!box || !startBtn) return;
+  const progress = loadProgress(subject);
+  box.classList.toggle("hidden", !progress);
+  startBtn.classList.toggle("hidden", Boolean(progress));
+  if (!progress) return;
+
+  const total = progress.ids.length;
+  const answered = Object.keys(progress.results).length;
+  const done = firstUnansweredIndex(progress.ids, progress.results) >= total;
+  document.getElementById(`btn-resume-${subject}`).textContent = done
+    ? "▶ けっかを みる"
+    : `▶ つづきから（${answered}問 こたえたよ／全${total}問）`;
+  document.getElementById(`resume-note-${subject}`).textContent = done
+    ? `全${total}問 こたえたよ（${progress.savedAt}）`
+    : `${progress.savedAt} に とちゅうまで やったよ`;
+}
+
+/** 「さいしょから やりなおす」。確認OKでも途中保存は破棄せず、範囲えらびへ進むだけ */
+function confirmRestart(subject) {
+  if (!confirm("さいしょから やりなおすと、いままでの こたえは なくなるよ。いいかな？")) return;
+  openScope(subject);
 }
 
 // --- 範囲えらび画面（未習単元を出題から外す） --------------------
@@ -196,6 +386,8 @@ function startQuiz(subject, units) {
     return;
   }
   const ids = shuffleArray(bank.map((p) => p.id));
+  // 新しい出題順が確定したこの瞬間にだけ、既存の途中保存を破棄する（範囲えらびの「もどる」では消えない）
+  if (isResumable(subject)) discardProgress(subject);
   quizState = { subject, ids, index: 0, results: {}, units };
   showQuestion();
 }
@@ -242,6 +434,7 @@ function selectChoice(choice, p, btnEl) {
   // 誤答の中身（何と答えたか）まで残す。単元別正答率だけでは
   // 「何が分かっていないか」が分からず、ドリル選定に使えないため
   quizState.results[p.id] = { ok, unit: p.unit, chosen: choice, question: p.question, answer: p.answer };
+  saveProgress(); // 1問答えるたびに途中保存（対象教科のみ・失敗しても画面は止めない）
 
   document.getElementById("quiz-feedback-msg").textContent = ok ? "せいかい！🎉" : "おしい！";
   document.getElementById("quiz-explanation").textContent = p.explanation || "";
@@ -258,8 +451,25 @@ function nextQuestion() {
 }
 
 function quitQuiz() {
+  // 回答は1問ごとに saveProgress() で保存済みのため、ここでは何も保存せずメモリ上の状態を捨てるだけでよい
   quizState = null;
   renderHome();
+}
+
+/** 途中保存から再開する。最初の未回答問題から始め、未回答が無ければそのまま結果へ進む */
+function resumeQuiz(subject) {
+  const progress = loadProgress(subject);
+  if (!progress) {
+    renderHome(); // 途中保存が使えなくなっていた場合はホームを描き直す（「はじめる」が出る）
+    return;
+  }
+  const index = firstUnansweredIndex(progress.ids, progress.results);
+  quizState = { subject, ids: progress.ids, index, results: progress.results, units: progress.units };
+  if (index >= progress.ids.length) {
+    finishQuiz();
+  } else {
+    showQuestion();
+  }
 }
 
 // --- 結果画面（苦手マップ） ------------------------------------
@@ -296,7 +506,12 @@ function finishQuiz() {
   const list = store.history[subject];
   const prev = list.length > 0 ? list[list.length - 1] : null; // 保存前の最終回＝前回
   list.push(record);
-  saveStore();
+  if (saveStore()) {
+    settleProgressAfterRecord(subject); // 履歴保存に成功した時だけ、印→破棄
+  } else if (isResumable(subject)) {
+    // 履歴保存に失敗: メモリ上の履歴も巻き戻し、途中保存は残す（再度「つづきから」で完了を試せる）
+    list.pop();
+  }
 
   renderResult(subject, record, prev);
 }
@@ -612,6 +827,8 @@ function copyResult() {
 // ============================================================
 function bindEvents() {
   document.getElementById("btn-start-sansu").addEventListener("click", () => openScope("sansu"));
+  document.getElementById("btn-resume-sansu").addEventListener("click", () => resumeQuiz("sansu"));
+  document.getElementById("btn-restart-sansu").addEventListener("click", () => confirmRestart("sansu"));
   document.getElementById("btn-start-kokugo").addEventListener("click", () => openScope("kokugo"));
   document.getElementById("btn-start-shakai").addEventListener("click", () => openScope("shakai"));
   document.getElementById("btn-scope-start").addEventListener("click", startFromScope);
