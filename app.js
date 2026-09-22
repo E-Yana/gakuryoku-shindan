@@ -15,7 +15,7 @@ const WEAK_THRESHOLD = 0.6; // この正答率未満の単元を「苦手」と�
 
 // アプリの表示用バージョン。中身を更新したら sw.js の CACHE と対で必ずインクリメントする
 // （ホーム画面に表示することで、iPad側で更新が反映されたか目視確認できるようにする）
-const APP_VERSION = "v9";
+const APP_VERSION = "v10";
 
 // resumable: true の教科だけ「途中保存・つづきから」が有効（未設定＝従来動作）
 const SUBJECTS = {

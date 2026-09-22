@@ -102,6 +102,10 @@ window.SANSU_PROBLEMS = [
     answer: "350000000", distractors: ["35000000", "3500000000"], explanation: "一億が3こと千万が5こ＝350000000（0が7こ）" },
   { id: "s-0033", unit: "大きな数", question: "一兆は、一億を何こ集めた数？",
     answer: "1万こ", distractors: ["1000こ", "100万こ"], explanation: "億の1万倍が兆" },
+  { id: "s-0064", unit: "大きな数", question: "八億三千万を数字で書くと？",
+    answer: "830000000", distractors: ["83000000", "8300000000"], explanation: "億の位が8、千万の位が3で830000000（0が7こ）" },
+  { id: "s-0065", unit: "大きな数", question: "一兆を10等分すると？",
+    answer: "千億", distractors: ["百億", "一億"], explanation: "兆は億の1万倍。1兆÷10=千億" },
 
   // --- わり算の筆算（増問） ---
   { id: "s-0034", unit: "わり算の筆算", question: "900 ÷ 30 = ?",
